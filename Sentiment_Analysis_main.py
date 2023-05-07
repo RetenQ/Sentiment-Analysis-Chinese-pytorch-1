@@ -17,6 +17,7 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
+import matplotlib.pyplot as plt
 import tqdm
 from Sentiment_Analysis_DataProcess import (
     data_preview,
@@ -43,7 +44,15 @@ def train(train_dataloader, model, device, epoches, lr):
     # 学习率调整
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2)
     best_acc = 0.85
+    
+    #! 修改得到图片部分   
+    train_loss_pic =[] # 记录用于作图
+    train_acc_pic =[] # 同上
+    train_F1_pic =[]
+    train_Recall_pic =[]
+    
     for epoch in range(epoches):
+        #! 这里开始训练
         train_loss = 0.0
         correct = 0
         total = 0
@@ -61,16 +70,20 @@ def train(train_dataloader, model, device, epoches, lr):
             output = model(input_)
             # 实际目标label:target, shape:[num_samples, 1]=>[num_samples]
             target = target.squeeze(1)
-            loss = criterion(output, target)
+            loss = criterion(output, target) #! 损失样例
+            # train_loss_pic.append(loss.item()) #! 损失加入列表
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
+            train_loss += loss.item() 
             # get predicted label: Returns ``(values, indices)``
             _, predicted = torch.max(output, 1)
             total += target.size(0)
             correct += (predicted == target).sum().item()
             F1 = f1_score(target.cpu(), predicted.cpu(), average="weighted")
+            # train_F1_pic.append(F1)  #! F1加入列表
             Recall = recall_score(target.cpu(), predicted.cpu(), average="micro")
+            
+            # train_Recall_pic.append(Recall) ; #! recall加入列表
             # CM=confusion_matrix(target.cpu(),predicted.cpu())
             postfix = {
                 "train_loss: {:.5f},train_acc:{:.3f}%"
@@ -80,7 +93,22 @@ def train(train_dataloader, model, device, epoches, lr):
             }
             train_dataloader.set_postfix(log=postfix)
 
-        acc = val_accuary(model, val_dataloader, device, criterion)
+        acc = val_accuary(model, val_dataloader, device, criterion)#! 准确率
+        # train_acc_pic.append(acc) #! 准确率入表
+
+        #! 记录所需文件
+        # with open("./train_loss.txt", 'w') as train_los:
+        #     train_los.write(str(train_loss_pic))
+            
+        # with open("./train_acc.txt", 'w') as train_ac:
+        #     train_ac.write(str(train_acc_pic))
+            
+        # with open("./train_F1.txt", 'w') as train_F1:
+        #     train_F1.write(str(train_F1_pic))
+            
+        # with open("./train_recall.txt", 'w') as train_recall:
+        #     train_recall.write(str(train_Recall_pic))
+        #!
 
         if acc > best_acc:
             best_acc = acc
@@ -161,6 +189,10 @@ if __name__ == "__main__":
         epoches=Config.n_epoch,
         lr=Config.lr,
     )
+    
+    #! 个人测试的绘图代码
+    
+    #!
 
     # 保存模型
     if os.path.exists(Config.model_dir) == False:

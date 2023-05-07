@@ -18,6 +18,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix, f1_score, recall_score, precision_score
 import os
+import csv
 from Sentiment_model import LSTMModel, LSTM_attention
 from Sentiment_Analysis_Config import Config
 from Sentiment_Analysis_DataProcess import (
@@ -133,6 +134,25 @@ def pre(word2id, model, seq_lenth, path):
                     i + 1, texts[i], pred[i].item()
                 )
             )
+            write_to_csv(pred[i].item() , texts[i])
+
+# 魔改部分
+
+
+def write_to_csv(theVal, theText):
+    path = r'J:\MIEC学习相关\论文\数据\处理数据\预测结果\最终数据'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    with open(os.path.join(path, 'example.csv'), mode='a',encoding='utf-8-sig', newline='') as file:
+        writer = csv.writer(file)
+        if file.tell() == 0:
+            writer.writerow(['A', 'B'])
+        if not isinstance(theVal, (list, tuple)):
+            theVal = [theVal]
+        if not isinstance(theText, (list, tuple)):
+            theText = [theText]
+        for i in range(len(theVal)):
+            writer.writerow([theVal[i], theText[i]])
 
 
 if __name__ == "__main__":
